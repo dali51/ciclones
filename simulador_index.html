@@ -1,0 +1,94 @@
+import pygame
+import math
+import random
+
+# Configuración de la ventana
+WIDTH, HEIGHT = 800, 600
+CENTER_X, CENTER_Y = WIDTH // 2, HEIGHT // 2
+RADIUS = 200  # Radio de la espiral
+NUM_PARTICLES = 500  # Número de partículas de viento
+SPIRAL_SPEED = 0.02  # Velocidad de rotación de las partículas
+NUM_RAINDROPS = 200  # Número de gotas de lluvia
+
+# Inicializar Pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Simulador de Ciclón con Lluvia")
+clock = pygame.time.Clock()
+
+# Crear partículas (viento)
+particles = []
+for i in range(NUM_PARTICLES):
+    angle = random.uniform(0, 2 * math.pi)  # Ángulo inicial aleatorio
+    distance = random.uniform(RADIUS, RADIUS + 100)  # Distancia aleatoria de la espiral
+    speed = random.uniform(1, 3)  # Velocidad de la partícula
+    particles.append([angle, distance, speed])
+
+# Crear gotas de lluvia
+raindrops = []
+for i in range(NUM_RAINDROPS):
+    x = random.randint(0, WIDTH)  # Posición aleatoria en el eje X
+    y = random.randint(-HEIGHT, 0)  # Posición aleatoria en el eje Y (por encima de la pantalla)
+    speed = random.uniform(3, 7)  # Velocidad de caída
+    angle = random.uniform(-math.pi/4, math.pi/4)  # Ángulo de movimiento horizontal
+    raindrops.append([x, y, speed, angle])
+
+# Función para dibujar el ciclón
+def draw_cyclone():
+    screen.fill((30, 30, 30))  # Fondo oscuro
+
+    # Dibujar partículas (viento)
+    for particle in particles:
+        angle, distance, speed = particle
+
+        # Calcular la posición de la partícula
+        x = CENTER_X + distance * math.cos(angle)
+        y = CENTER_Y + distance * math.sin(angle)
+
+        # Dibujar la partícula
+        pygame.draw.circle(screen, (255, 255, 255), (int(x), int(y)), 2)
+
+        # Actualizar el ángulo y la distancia para el próximo frame (simula el movimiento en espiral)
+        particle[angle] += SPIRAL_SPEED
+        particle[distance] -= speed * 0.02  # Las partículas se acercan al centro
+
+        # Si la partícula llega al centro, reiniciamos su posición
+        if particle[distance] < 10:
+            particle[distance] = random.uniform(RADIUS, RADIUS + 100)
+            particle[angle] = random.uniform(0, 2 * math.pi)
+
+    # Dibujar gotas de lluvia
+    for raindrop in raindrops:
+        x, y, speed, angle = raindrop
+
+        # Calcular el movimiento de la lluvia con el viento
+        wind_x = math.sin(angle) * speed  # Movimiento horizontal debido al viento
+        wind_y = speed  # Movimiento vertical hacia abajo
+
+        # Actualizar la posición de la gota de lluvia
+        raindrop[0] += wind_x
+        raindrop[1] += wind_y
+
+        # Dibujar la gota de lluvia
+        pygame.draw.line(screen, (0, 0, 255), (x, y), (x + wind_x, y + wind_y), 2)
+
+        # Si la gota de lluvia sale de la pantalla, la reiniciamos en la parte superior
+        if raindrop[1] > HEIGHT:
+            raindrop[0] = random.randint(0, WIDTH)
+            raindrop[1] = random.randint(-HEIGHT, 0)
+            raindrop[3] = random.uniform(-math.pi/4, math.pi/4)  # Nuevo ángulo de viento
+            raindrop[2] = random.uniform(3, 7)  # Nueva velocidad
+
+# Bucle principal
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    draw_cyclone()
+    
+    pygame.display.flip()
+    clock.tick(60)  # 60 FPS
+
+pygame.quit()
